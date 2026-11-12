@@ -1,0 +1,19 @@
+# Windows Junction (.agents/skills -> .claude/skills) 중복 추적 방지
+.agents/
+
+# 에이전트·IDE 로컬 설정 및 토큰 포함 가능 경로
+.claude/*.local.*
+.claude/settings.local.json
+.cursor/
+.codex/
+.gemini/
+
+# Roblox Studio 임시/잠금 파일
+*.rbxl.lock
+*.rbxlx.lock
+
+# OS·임시 파일
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store

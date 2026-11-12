@@ -1,0 +1,108 @@
+# 프로젝트 구조
+
+코드의 원본은 Roblox Studio 플레이스(이름 "테스트", placeId 83133799777417)다. 로컬 폴더에는 문서·스킬·설정만 있다.
+
+## Studio 계층
+
+```
+Workspace
+  Mall                    실내 쇼핑몰 맵 루트 (220×160 studs). 닫힌 공간이라 밖으로 나갈 수 없다
+    Structure             바닥, 외벽, 천장(이름은 SkylightRoof지만 불투명), 2층 링 구조, 닫힌 입구 문(EntranceDoors)
+                          높이: 바닥 윗면 Y=1, 2층 바닥 Y=24~25, 지붕 아랫면 Y=49
+    Zones                 구역별 모델 (Plaza, Stage, PhotoZone, Mart, ToyShop, Community, Fashion, Arcade, Storage, PowerRoom)
+    Triggers              Region/구역 진입·이벤트 트리거 파트
+    Lights                조명 기구. 구역 id 이름의 폴더(속성 ZoneId)로 묶여 있다: plaza, stage, photo, entrance,
+                          mart, toy_shop, community, fashion, arcade, storage, power_room, corridor
+    NPCs                  NPC 7명. <npcId>(속성 NpcId, ZoneId, NpcRole) 아래 SpawnPad와 Character(R15 캐릭터).
+                          Character.HumanoidRootPart에 ProximityPrompt, Character.Head에 이름표(NameTag)
+
+ReplicatedStorage
+  Shared
+    Loader            폴더의 모듈을 Init → Start 순서로 실행
+    Net               Remote 창구. 사용 가능한 Remote 목록이 주석에 있다
+    Types             플레이어 프로필, 상점 아이템, 구역, 소동 상태 공용 타입
+    Config
+      GameConfig      전역 수치 (맵 규격, 소동 공지 시간, 초기 코인 등)
+      Npcs            NPC 연출 수치(동작 id, 인사 거리·간격, 눈 깜빡임)
+      Carry           들고 나르기 수치(줍기 반경, 머리 위 높이, 방치 복귀 시간 등)
+      Blackout        대정전 수치(인원 구간별 구역·칸 수, 차단기 좌표, 어두운 조명, 유도선)
+      Events          소동 일정(첫 공지 90초, 간격 5분, 결과 15초)과 소동별 수치(시간, 목표, 보상)
+    Util              공용 순수 로직
+      NumberFormat    1.2K 축약, 쉼표, 분:초
+      TableUtil       deepCopy, reconcile
+      Validate        클라이언트 입력 검사
+      RateLimiter     플레이어별 호출 빈도 제한
+  UI                  테마, 모션, AutoScale, 공용 컴포넌트 (구현 예정)
+    Components
+  Remotes             RemoteEvent / RemoteFunction 인스턴스
+  EventState          (실행 중 생성) 소동 상태가 속성으로 복제되는 Configuration
+
+ServerScriptService
+  Server
+    Main              서버 진입점 (Script). Services를 Loader로 실행
+    Services
+      DataService     플레이어 데이터(Mall Coins, 보유/장착 아이템, 통계) 로드·저장 [구현됨]
+      ZoneService     구역 감지(Player 속성 ZoneId), 구역 안 빈 바닥 지점 고르기 [구현됨]
+      ShopService     상점 품목 구매 검증, 장착 처리
+      NpcService      NPC 연출: 서 있는 동작, 눈 깜빡임, 가까이 온 손님 쪽으로 돌아서 인사 [구현됨]
+      CarryService    들고 나르기 공통 조작(닿으면 머리 위 부착, 목적지 전달, 10초 방치 시 복귀) [구현됨]
+      EventService    소동 일정, 60초 전 공지, 인원별 목표 조정, 기여 집계, 보상 지급 [구현됨]
+    Events            소동별 모듈. 파일 이름 = 소동 id. Loader가 실행하지 않고 EventService가 불러 쓴다
+      blackout        소동 1호 "쇼핑몰 대정전": 정전·손전등·유도선·배터리·구역별 차단기 복구 [구현됨]
+      dev_collect     (개발용) 틀 시험용 소동. 자동 일정에 나오지 않는다
+
+ServerStorage
+  MapArchive
+    NPC_whitebox      교체 전의 NPC 표식(상자·공). 지우지 않고 보관. 필요 없으면 사용자 확인 뒤 삭제
+    Storage           창고 입구를 막던 막대(RestrictedBar). 창고를 열면서 옮김
+
+StarterPlayer.StarterPlayerScripts
+  Client
+    Main              클라이언트 진입점 (LocalScript). Controllers를 Loader로 실행
+    Controllers
+      ScreenController       화면 전환, 모달 스택
+      HudController          상시 HUD(Mall Coins, 현재 구역, 소동 공지, 이모트)
+      InteractionController  NPC·상점·포토존·오브젝트 상호작용
+      EventController        소동 상태 읽기(GetState, OnChanged, OnResult). 지금은 임시로 채팅창에 알림 [구현됨]
+    Screens           화면별 UI 모듈
+```
+
+## 조명 구성
+
+- 천장이 막혀 있지만 건물 껍데기(천장, 외벽, 2층 바닥)는 그림자를 드리우지 않게 해 두었다. 해(`Lighting.Brightness` 0.8)가 실내 전체의 은은한 바탕 빛이 되고, 그 위에 `Mall.Lights`의 기구(약 56개, 전부 그림자 없음)가 얹힌다.
+- 바탕이 흰 바닥이라 쉽게 하얗게 날아간다. 기구를 더 달면 화면 캡처로 밝기를 확인한다.
+- 대정전 때는 해와 Ambient를 낮추고 구역 폴더 단위로 기구를 켠다.
+
+## 규칙
+
+- **진입점은 둘뿐이다.** 새 `Script`/`LocalScript`를 만들지 않는다. 서버 로직은 `Services`에, 클라이언트 로직은 `Controllers`에 `ModuleScript`로 추가하면 Loader가 자동으로 실행한다.
+- **모듈 형태**: 테이블을 반환하고, 필요하면 `:Init()`(자기 초기화만)과 `:Start()`(다른 모듈 사용 가능)를 둔다. 첫 줄은 `--!strict`.
+- **서버↔클라이언트트는 `Net`으로만.** Remote를 추가하면 `ReplicatedStorage.Remotes`에 인스턴스를 만들고 `Net` 주석 표에 한 줄 적는다. 클라이언트는 의도(예: `BuyItem(itemId)`)만 보내고 서버가 가격·재화·보유 여부를 전부 검증한다.
+- **수치는 `Config`에.** 코드에 숫자를 직접 쓰지 않는다.
+- **역할 분리**: `Shared.Util`은 서버·클라이언트 어디서 불러도 되는 순수 로직(인스턴스·서비스 접근 없음)만 둔다.
+
+## 소동 추가 방법
+
+1. `ReplicatedStorage.Shared.Config.Events`의 `Events` 표에 항목을 추가한다(이름, 설명, 진행 시간, 목표, 보상).
+2. 같은 id의 `ModuleScript`를 `ServerScriptService.Server.Events`에 만든다.
+   - `Start(ctx)`: 진행이 시작될 때 불린다. 만든 물건은 전부 `ctx.folder` 아래에 넣는다(끝나면 통째로 지워진다).
+   - `Stop(ctx, success)`: (선택) 끝날 때 불린다.
+   - `ctx.AddProgress(player, amount)`로 진행도를 올린다. `player`를 넘겨야 그 사람의 기여로 잡혀 보상을 받는다.
+   - `ctx.goal`(인원에 맞춰 계산된 목표), `ctx.IsActive()`, `ctx.GetProgress()`, `ctx.RandomPoint(zoneId, 반지름)`(구역 안 빈 바닥)을 쓸 수 있다.
+3. 시간, 목표 도달 판정, 보상 지급, 상태 복제는 `EventService`가 한다. 소동 모듈에서 따로 만들지 않는다.
+
+**Studio에서 시험하기** (플레이 테스트 중 서버에서):
+
+```lua
+game.ServerStorage.DebugEventControl:Fire("start", "dev_collect") -- 바로 공지 시작
+game.ServerStorage.DebugEventControl:Fire("skip")                 -- 지금 단계의 남은 시간 건너뛰기
+```
+
+**상태 복제 규칙**: 계속 유지되는 상태(소동 상태, 플레이어의 현재 구역)는 인스턴스 속성으로 복제하고, 한 번 지나가는 알림(결과, 토스트)만 Remote로 보낸다. 목록은 `Shared.Net` 주석에 있다.
+
+## 검증 상태
+
+- 2026-11-12 플레이 테스트: 구역 감지(광장·마트·스테이지·복도), 소동 공지 → 진행 → 성공/실패 → 결과, 코인 지급(100 → 160)을 확인. 콘솔 오류 없음.
+- 2026-11-12 맵 수정 뒤 플레이 테스트: 서쪽 계단으로 2층 도달, 입구 유리문 통과 불가(걷기·점프)를 확인. 맵의 외형은 아직 아무도 눈으로 보지 못했다.
+- 2026-11-12 1차 다듬기 뒤: 화면 캡처로 조명·재질·NPC 외형을 확인. 플레이 테스트에서 NPC의 서 있는 동작, 손님 쪽으로 돌기, 손 흔들기(클라이언트에서 손 높이 변화 측정), 눈 깜빡임을 확인.
+- 미확인: 데이터 저장(Studio의 API 접근이 꺼져 있어 임시 프로필로만 동작), 여러 명일 때의 목표 조정과 MVP, 채팅 알림의 실제 표시.

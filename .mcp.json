@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "Roblox_Studio": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "for",
+        "/d",
+        "%d",
+        "in",
+        "(%LOCALAPPDATA%\\Roblox\\Versions\\*)",
+        "do",
+        "@if",
+        "exist",
+        "%d\\StudioMCP.exe",
+        "%d\\StudioMCP.exe"
+      ]
+    }
+  }
+}
