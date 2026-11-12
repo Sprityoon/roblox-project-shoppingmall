@@ -38,3 +38,4 @@ description: 이 프로젝트의 Git/GitHub 커밋·풀·푸시 절차. 사용�
 2. `docs/plan/tasks.md`, `docs/log/*.md`, `docs/plan/game-design.md`, `docs/plan/structure.md`에서 충돌이 나면 한쪽을 덮어쓰지 말고 **양쪽 항목을 모두 보존**하는 방향으로 병합한다.
 3. 첫 푸시이거나 업스트림이 없으면 `git push -u origin main`, 이후에는 `git push`를 실행한다.
 4. 푸시 후 `git status -sb`, `git branch -vv`, `git log --oneline -3`으로 결과를 확인해 보고한다.
+

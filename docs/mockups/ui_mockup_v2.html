@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>실내 쇼핑몰 소셜 허브 — UI 목업 v2 (T-112)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.92) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes shakeX {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    @keyframes floatToast {
+      0% { opacity: 0; transform: translate(-50%, 10px) scale(0.96); }
+      15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      85% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -8px) scale(0.97); }
+    }
+    .anim-pop { animation: popIn 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+    .anim-shake { animation: shakeX 0.28s ease-in-out; }
+    .anim-toast { animation: floatToast 2.1s ease forwards; }
+    .btn-press { transition: transform 0.1s ease, filter 0.15s ease; }
+    .btn-press:active { transform: scale(0.94); }
+  </style>
+</head>
+<body class="bg-[#F6F1F4] text-[#362B35] antialiased m-0 p-4 md:p-6">
+  <div class="max-w-6xl mx-auto space-y-5">
+
+    <header class="bg-white border border-[#EEDEE4] rounded-2xl p-4 flex flex-col gap-3 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFE4EE] text-[#B83B6B]">T-112</span>
+            <h1 class="text-lg font-bold tracking-tight">실내 쇼핑몰 소셜 허브 — UI 목업 v2</h1>
+          </div>
+          <p class="text-xs text-[#7D6673] mt-1">
+            화면 상태를 눌러 HUD·소동·상점·모바일 여백 배치를 직접 테스트한 뒤 확정해 주세요.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-1.5 bg-[#FBF6F9] p-1 rounded-xl border border-[#EEDEE4]">
+          <button onclick="setDevice('pc')" id="dev-pc" class="btn-press px-3 py-1.5 rounded-lg text-xs font-semibold">PC (16:9)</button>
+          <button onclick="setDevice('mobile')" id="dev-mobile" class="btn-press px-3 py-1.5 rounded-lg text-xs font-semibold">모바일 가로 + 조작존</button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#F3E7EC]">
+        <div class="flex flex-wrap items-center gap-1.5" id="screen-tabs">
+          <button onclick="setScreen('free')" data-screen="free" class="btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border">1. 평상시 HUD</button>
+          <button onclick="setScreen('notice')" data-screen="notice" class="btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border">2. 소동 예고 (60초)</button>
+          <button onclick="setScreen('active')" data-screen="active" class="btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border">3. 소동 진행 (대정전)</button>
+          <button onclick="setScreen('result')" data-screen="result" class="btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border">4. 소동 결과 창</button>
+          <button onclick="setScreen('shop')" data-screen="shop" class="btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border">5. 상점 창 (3곳)</button>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs">
+          <label class="text-[#7D6673] font-medium">현재 구역:</label>
+          <select id="zone-select" onchange="setZone(this.value)" class="bg-[#FBF6F9] border border-[#EEDEE4] rounded-lg px-2.5 py-1 text-xs font-semibold">
+            <option value="plaza">중앙 광장</option>
+            <option value="mart">마트</option>
+            <option value="toy_shop">장난감 가게</option>
+            <option value="fashion">패션 상점</option>
+            <option value="power_room">전기실</option>
+            <option value="storage">창고</option>
+            <option value="community">커뮤니티 센터</option>
+            <option value="corridor">복도</option>
+          </select>
+          <label class="flex items-center gap-1.5 cursor-pointer select-none ml-1">
+            <input type="checkbox" id="carry-toggle" onchange="toggleCarry()" class="accent-[#F06292]" />
+            <span class="font-medium">물건 드는 중</span>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex justify-center">
+      <div id="viewport-frame" class="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-[#E3CFD8] shadow-xl select-none transition-all duration-300" style="background: linear-gradient(180deg, #FBF6F0 0%, #EFE6DC 52%, #E5D7C8 100%);">
+
+        <div id="world-backdrop" class="absolute inset-0 pointer-events-none transition-all duration-500">
+          <div class="absolute inset-x-0 top-[24%] flex justify-around opacity-40 px-12">
+            <div class="w-40 h-28 rounded-t-2xl border-2 border-white/70 bg-[#FCE8EE]/70 flex items-start justify-center pt-2">
+              <span class="px-2 py-0.5 rounded bg-[#DA5CA8]/80 text-white text-xs font-bold">패션 상점</span>
+            </div>
+            <div class="w-48 h-32 rounded-t-2xl border-2 border-white/70 bg-[#FFF3DF]/70 flex items-start justify-center pt-2">
+              <span class="px-2 py-0.5 rounded bg-[#E8A82E]/85 text-white text-xs font-bold">이벤트 스테이지</span>
+            </div>
+            <div class="w-40 h-28 rounded-t-2xl border-2 border-white/70 bg-[#E8F4FF]/70 flex items-start justify-center pt-2">
+              <span class="px-2 py-0.5 rounded bg-[#549AE0]/80 text-white text-xs font-bold">커뮤니티 센터</span>
+            </div>
+          </div>
+          <div class="absolute inset-x-0 bottom-0 h-[44%] bg-gradient-to-b from-transparent via-[#F6DFDF]/40 to-[#EAD2D6]/60"></div>
+          <div class="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+            <div id="world-carry-prop" class="hidden mb-1.5 px-2.5 py-1 rounded-lg bg-[#B0FF60] text-[#2A3B12] text-xs font-extrabold shadow-md border-2 border-white">🔋 배터리</div>
+            <div id="world-emote-bubble" class="hidden mb-1 px-2.5 py-1 rounded-full bg-white text-[#342C36] text-xs font-bold shadow">👋 안녕하세요!</div>
+            <div class="w-9 h-9 rounded-full bg-[#FFD1A9] border-2 border-white shadow"></div>
+            <div class="w-11 h-12 rounded-xl bg-[#FF7CA8] border-2 border-white shadow -mt-1"></div>
+          </div>
+        </div>
+
+        <div id="darkness-overlay" class="hidden absolute inset-0 pointer-events-none transition-opacity duration-500" style="background: radial-gradient(circle at 50% 58%, rgba(255,244,214,0.08) 0%, rgba(24,32,56,0.68) 38%, rgba(16,22,42,0.82) 100%);"></div>
+
+        <div class="absolute top-2 left-3 right-3 h-9 pointer-events-none flex items-center justify-between opacity-55">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-black/45 flex items-center justify-center text-white text-xs">☰</div>
+            <div class="w-8 h-8 rounded-full bg-black/45 flex items-center justify-center text-white text-xs">💬</div>
+          </div>
+          <div class="px-2 py-0.5 rounded bg-black/35 text-white text-[11px] font-medium">Roblox TopBar 안전 영역 (Y=48px 아래 배치)</div>
+        </div>
+
+        <div id="mobile-guides" class="hidden absolute inset-0 pointer-events-none">
+          <div class="absolute bottom-5 left-6 w-28 h-28 rounded-full border-2 border-dashed border-[#549AE0]/70 bg-[#549AE0]/10 flex items-center justify-center text-center text-[11px] font-bold text-[#2F6FB0]">
+            이동 조이스틱<br/>(비워둠)
+          </div>
+          <div class="absolute bottom-5 right-6 w-20 h-20 rounded-full border-2 border-dashed border-[#549AE0]/70 bg-[#549AE0]/10 flex items-center justify-center text-center text-[11px] font-bold text-[#2F6FB0]">
+            점프<br/>버튼
+          </div>
+        </div>
+
+        <div id="hud-layer" class="absolute inset-x-0 top-12 bottom-3 px-4 pointer-events-none flex flex-col justify-between">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex flex-col items-start gap-1.5 pointer-events-auto">
+              <div class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#FFFDFB]/95 border-2 border-[#EEDEE4] shadow-sm">
+                <span id="hud-zone-dot" class="w-3 h-3 rounded-full shrink-0" style="background:#F06292"></span>
+                <span id="hud-zone-name" class="text-sm font-extrabold text-[#362B35]">중앙 광장</span>
+              </div>
+              <div id="hud-carry-pill" class="hidden anim-pop flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF7D6] border border-[#F5C542] text-[#7A5600] text-xs font-bold shadow-sm">
+                <span>🔋</span>
+                <span>배터리 운반 중 · 차단기 앞 원으로 이동</span>
+              </div>
+            </div>
+
+            <div id="hud-event-center" class="pointer-events-auto flex-1 max-w-md flex justify-center">
+              <div id="banner-notice" class="hidden anim-pop w-full rounded-2xl bg-[#FFF8EC]/95 border-2 border-[#FFAE42] shadow-md px-4 py-2 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-8 h-8 rounded-xl bg-[#FFE3B8] flex items-center justify-center text-base shrink-0">⚡</span>
+                  <div class="min-w-0">
+                    <div class="text-xs font-extrabold text-[#B85D00] truncate">곧 소동 시작 · 쇼핑몰 대정전</div>
+                    <div class="text-xs text-[#6B4A2B] truncate">전기가 불안정해요! 배터리를 찾아 차단기에 꽂아요.</div>
+                  </div>
+                </div>
+                <div class="px-2.5 py-1 rounded-xl bg-[#FF8A1F] text-white font-mono text-sm font-extrabold tabular-nums shrink-0">00:48</div>
+              </div>
+
+              <div id="banner-active" class="hidden anim-pop w-full rounded-2xl bg-[#252B42]/95 border-2 border-[#7CE88B] shadow-lg px-4 py-2 text-white">
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm">⚡</span>
+                    <span class="text-xs font-extrabold tracking-tight">쇼핑몰 대정전</span>
+                  </div>
+                  <div class="flex items-center gap-2 font-mono text-xs font-bold tabular-nums">
+                    <span id="event-progress-text" class="text-[#8FF7A0]">4 / 6</span>
+                    <span class="px-2 py-0.5 rounded-lg bg-white/15">02:14</span>
+                  </div>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-white/15 overflow-hidden">
+                  <div id="event-progress-bar" class="h-full rounded-full bg-gradient-to-r from-[#6BE384] to-[#B0FF60] transition-all duration-300" style="width: 66.7%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pointer-events-auto">
+              <div class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#FFFDFB]/95 border-2 border-[#F5DDA0] shadow-sm min-w-[110px] justify-between">
+                <span class="w-5 h-5 rounded-full bg-[#FFCA28] border border-[#E09B00] flex items-center justify-center text-[11px] font-black text-[#6B4600]">C</span>
+                <span id="hud-coins" class="font-mono text-sm font-extrabold text-[#4A3500] tabular-nums">360</span>
+              </div>
+              <button onclick="setScreen('shop')" title="상점 보기" class="btn-press h-11 px-3 rounded-2xl bg-[#FFE3EE] hover:bg-[#FFD3E4] border-2 border-[#F39EC0] text-[#9E2A5B] text-xs font-extrabold shadow-sm flex items-center gap-1.5">
+                <span>🛍️</span>
+                <span class="hidden sm:inline">꾸미기</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-end justify-end">
+            <div id="emote-dock" class="pointer-events-auto mr-24 md:mr-28 mb-1 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#FFFDFB]/92 border-2 border-[#EEDEE4] shadow-md">
+              <button onclick="triggerEmote('👋 안녕!')" class="btn-press w-11 h-11 rounded-xl bg-[#FFF3F7] hover:bg-[#FFE4EE] flex flex-col items-center justify-center text-base leading-none" title="손 흔들기">
+                <span>👋</span>
+                <span class="text-[10px] font-bold text-[#6E5663] mt-0.5">인사</span>
+              </button>
+              <button onclick="triggerEmote('🎉 야호!')" class="btn-press w-11 h-11 rounded-xl bg-[#FFF7E6] hover:bg-[#FFECC7] flex flex-col items-center justify-center text-base leading-none" title="환호">
+                <span>🎉</span>
+                <span class="text-[10px] font-bold text-[#7A5B21] mt-0.5">환호</span>
+              </button>
+              <button onclick="triggerEmote('💃 댄스!')" class="btn-press w-11 h-11 rounded-xl bg-[#F0F7FF] hover:bg-[#DFEEFF] flex flex-col items-center justify-center text-base leading-none" title="춤추기">
+                <span>💃</span>
+                <span class="text-[10px] font-bold text-[#2F5E94] mt-0.5">춤</span>
+              </button>
+              <button onclick="triggerEmote('👏 짝짝!')" class="btn-press w-11 h-11 rounded-xl bg-[#F2FBF4] hover:bg-[#DFF6E4] flex flex-col items-center justify-center text-base leading-none" title="박수">
+                <span>👏</span>
+                <span class="text-[10px] font-bold text-[#2B6E3F] mt-0.5">박수</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="toast-slot" class="absolute top-28 left-1/2 -translate-x-1/2 pointer-events-none z-40"></div>
+
+        <div id="modal-result" class="hidden absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div class="anim-pop w-full max-w-md rounded-3xl bg-[#FFFDFB] border-2 border-[#F5CFE0] shadow-2xl overflow-hidden text-[#362B35]">
+            <div class="px-6 py-4 bg-gradient-to-r from-[#FF8BB3] to-[#FFAE6B] text-white flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold opacity-90">소동 해결! · 6 / 6 완료</div>
+                <h2 class="text-xl font-black tracking-tight mt-0.5">⚡ 쇼핑몰 대정전</h2>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-white/25 text-xs font-extrabold">성공 🎉</span>
+            </div>
+
+            <div class="p-5 space-y-4">
+              <div class="grid grid-cols-3 gap-2.5 text-center">
+                <div class="rounded-2xl bg-[#FFF6FA] border border-[#F5DCE6] p-3">
+                  <div class="text-xs text-[#7D6673] font-semibold">내 기여</div>
+                  <div class="text-lg font-black text-[#D44179] mt-0.5">3개</div>
+                </div>
+                <div class="rounded-2xl bg-[#FFF9E8] border border-[#F5E2B3] p-3">
+                  <div class="text-xs text-[#7A6228] font-semibold">받은 코인</div>
+                  <div class="text-lg font-black text-[#B87300] mt-0.5">+90 C</div>
+                </div>
+                <div class="rounded-2xl bg-[#F0F7FF] border border-[#D4E6FA] p-3">
+                  <div class="text-xs text-[#4C6B8E] font-semibold">오늘 MVP</div>
+                  <div class="text-sm font-black text-[#265D99] mt-1 truncate">SuperCARRY</div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl bg-[#F4FBF5] border border-[#CBEBD0] px-4 py-2.5 flex items-center justify-between text-xs">
+                <span class="font-bold text-[#286B3B]">참여 +30 · 해결 성공 +60</span>
+                <span class="font-extrabold text-[#1E823C]">스탬프 +1 적립!</span>
+              </div>
+
+              <button onclick="setScreen('free')" class="btn-press w-full h-12 rounded-2xl bg-[#F06292] hover:bg-[#E04F80] text-white font-extrabold text-sm shadow-md">
+                확인하고 계속 놀기
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="modal-shop" class="hidden absolute inset-0 z-30 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3 md:p-5">
+          <div class="anim-pop w-full max-w-2xl max-h-full rounded-3xl bg-[#FFFDFB] border-2 border-[#EEDEE4] shadow-2xl flex flex-col overflow-hidden text-[#362B35]">
+            <div class="px-5 py-3.5 bg-[#FFF6FA] border-b border-[#F2DFE7] flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <span id="shop-icon" class="w-9 h-9 rounded-2xl bg-[#FFE3EE] flex items-center justify-center text-lg">🧸</span>
+                <div>
+                  <h2 id="shop-title" class="text-base font-black leading-tight">장난감 가게</h2>
+                  <p id="shop-subtitle" class="text-xs text-[#7D6673]">풍선과 손전등 색으로 나를 꾸며 보세요</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="px-3 py-1.5 rounded-xl bg-[#FFF9E8] border border-[#F5DDA0] font-mono text-xs font-extrabold text-[#6B4600] tabular-nums">
+                  C <span id="shop-coins">360</span>
+                </div>
+                <button onclick="setScreen('free')" aria-label="닫기" class="btn-press w-11 h-11 rounded-xl bg-[#F5EAEF] hover:bg-[#EAD7DF] text-[#5B4752] font-black text-base flex items-center justify-center">✕</button>
+              </div>
+            </div>
+
+            <div class="px-5 pt-2.5 bg-white border-b border-[#F2E9ED] flex items-center gap-2">
+              <button onclick="setShopTab('toy_shop')" id="tab-toy_shop" class="btn-press px-3.5 py-2 text-xs font-extrabold rounded-t-xl border-b-2">🧸 장난감 가게</button>
+              <button onclick="setShopTab('fashion')" id="tab-fashion" class="btn-press px-3.5 py-2 text-xs font-extrabold rounded-t-xl border-b-2">✨ 패션 상점</button>
+              <button onclick="setShopTab('mart')" id="tab-mart" class="btn-press px-3.5 py-2 text-xs font-extrabold rounded-t-xl border-b-2">🥤 마트 간식</button>
+            </div>
+
+            <div id="shop-grid" class="p-4 grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto bg-[#FCFAFB]"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white border border-[#EEDEE4] rounded-2xl p-4 space-y-2.5 shadow-sm">
+        <h3 class="text-sm font-bold">🎨 공통 팔레트 (`Theme`)</h3>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#FFFDFB"></span><span>배경 `#FFFDFB`</span></div>
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#362B35"></span><span>글자 `#362B35`</span></div>
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#F06292"></span><span>주 강조 `#F06292`</span></div>
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#FFCA28"></span><span>코인 `#FFCA28`</span></div>
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#FFAE42"></span><span>예고 `#FFAE42`</span></div>
+          <div class="flex items-center gap-2"><span class="w-5 h-5 rounded-md border" style="background:#4AC96E"></span><span>성공 `#4AC96E`</span></div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-[#EEDEE4] rounded-2xl p-4 space-y-2 text-xs shadow-sm">
+        <h3 class="text-sm font-bold">📐 배치·조작 기준 (`T-104 / T-106`)</h3>
+        <ul class="space-y-1 text-[#7D6673] list-disc list-inside">
+          <li>화면 중앙 40% 완전 개방, TopBar 아래 `Y=48px`부터 HUD 시작</li>
+          <li>모든 터치 버튼 최소 `44×44px` (`UISizeConstraint`·`AutoScale`)</li>
+          <li>좌하단 조이스틱·우하단 점프 버튼 회피 (이모트 도크는 점프 왼쪽)</li>
+          <li>모달 열릴 때 뒤 어둡게 + X/바깥 탭/Esc 닫기 지원</li>
+        </ul>
+      </div>
+
+      <div class="bg-white border border-[#EEDEE4] rounded-2xl p-4 space-y-2 text-xs shadow-sm">
+        <h3 class="text-sm font-bold">🏬 구역별 HUD 대표색 (Studio 실측 일치)</h3>
+        <div class="flex flex-wrap gap-1.5 pt-0.5">
+          <span class="px-2 py-1 rounded-lg bg-[#FCE8EE] text-[#8E3557] font-bold">광장</span>
+          <span class="px-2 py-1 rounded-lg bg-[#FFE8D6] text-[#9E4E0D] font-bold">마트</span>
+          <span class="px-2 py-1 rounded-lg bg-[#FFF3D1] text-[#8C6100] font-bold">장난감</span>
+          <span class="px-2 py-1 rounded-lg bg-[#FCE0F0] text-[#942966] font-bold">패션</span>
+          <span class="px-2 py-1 rounded-lg bg-[#E3F0FC] text-[#275D94] font-bold">커뮤니티</span>
+          <span class="px-2 py-1 rounded-lg bg-[#FFF5D6] text-[#855F00] font-bold">전기실</span>
+          <span class="px-2 py-1 rounded-lg bg-[#EAECEF] text-[#454E5E] font-bold">창고</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const ZONES = {
+      plaza:      { name: "중앙 광장",     color: "#F06292" },
+      mart:       { name: "마트",          color: "#EB8A3E" },
+      toy_shop:   { name: "장난감 가게",   color: "#E8A82E" },
+      fashion:    { name: "패션 상점",     color: "#DA5CA8" },
+      power_room: { name: "전기실",        color: "#E6B22A" },
+      storage:    { name: "창고",          color: "#747C8C" },
+      community:  { name: "커뮤니티 센터", color: "#549AE0" },
+      corridor:   { name: "복도",          color: "#9E95A0" },
+    };
+
+    const SHOP_DATA = {
+      toy_shop: {
+        icon: "🧸",
+        title: "장난감 가게",
+        subtitle: "풍선과 손전등 색으로 나를 꾸며 보세요",
+        items: [
+          { id: "balloon_pink",  icon: "🎈", name: "딸기 풍선",       desc: "둥실둥실 따라다니는 풍선", price: 150, owned: true,  equipped: true,  deal: false },
+          { id: "balloon_star",  icon: "⭐", name: "별빛 풍선",       desc: "은은하게 반짝이는 별 풍선", price: 320, orig: 450, owned: false, equipped: false, deal: true },
+          { id: "flash_mint",    icon: "🔦", name: "민트 손전등 색",  desc: "대정전 때 내 불빛이 민트색", price: 240, owned: false, equipped: false, deal: false },
+          { id: "balloon_cloud", icon: "☁️", name: "구름 풍선",       desc: "포근한 파스텔 구름 풍선",   price: 550, owned: false, equipped: false, deal: false },
+        ]
+      },
+      fashion: {
+        icon: "✨",
+        title: "패션 상점",
+        subtitle: "걸음마다 남는 발자취 · 반짝이 · 칭호",
+        items: [
+          { id: "trail_rainbow", icon: "🌈", name: "무지개 발자취",   desc: "걸을 때마다 파스텔 무지개", price: 350, owned: false, equipped: false, deal: false },
+          { id: "aura_sparkle",  icon: "✨", name: "별가루 반짝이",   desc: "몸 주위 반짝이는 파티클",   price: 420, orig: 600, owned: false, equipped: false, deal: true },
+          { id: "title_helper",  icon: "🏷️", name: "칭호: 친절한 이웃", desc: "이름표 위에 칭호 표시",    price: 180, owned: true,  equipped: false, deal: false },
+          { id: "trail_heart",   icon: "💖", name: "하트 발자취",     desc: "분홍 하트가 퐁퐁 떠올라요", price: 1200, owned: false, equipped: false, deal: false },
+        ]
+      },
+      mart: {
+        icon: "🥤",
+        title: "마트 간식",
+        subtitle: "소동·알바 때 바로 도움이 되는 한입 간식",
+        items: [
+          { id: "snack_soda",   icon: "🥤", name: "탄산 스파크",     desc: "60초 동안 달리기 속도 +20%", price: 25, owned: false, equipped: false, deal: false, consumable: true },
+          { id: "snack_jelly",  icon: "🍮", name: "탱글 푸딩",       desc: "60초 동안 점프 힘 강화",     price: 30, owned: false, equipped: false, deal: false, consumable: true },
+          { id: "snack_berry",  icon: "🍓", name: "딸기 우유",       desc: "이동 속도 +15% · 반짝 효과", price: 20, orig: 30, owned: false, equipped: false, deal: true, consumable: true },
+        ]
+      }
+    };
+
+    let state = {
+      device: "pc",
+      screen: "free",
+      zone: "plaza",
+      carrying: false,
+      coins: 360,
+      shopTab: "toy_shop",
+    };
+
+    function showToast(msg, bg = "#362B35") {
+      const slot = document.getElementById("toast-slot");
+      const el = document.createElement("div");
+      el.className = "anim-toast px-4 py-2 rounded-full text-white text-xs font-extrabold shadow-lg whitespace-nowrap";
+      el.style.background = bg;
+      el.textContent = msg;
+      slot.innerHTML = "";
+      slot.appendChild(el);
+    }
+
+    function setDevice(dev) {
+      state.device = dev;
+      const frame = document.getElementById("viewport-frame");
+      const guides = document.getElementById("mobile-guides");
+      document.getElementById("dev-pc").className = "btn-press px-3 py-1.5 rounded-lg text-xs font-semibold " + (dev === "pc" ? "bg-[#F06292] text-white" : "text-[#7D6673]");
+      document.getElementById("dev-mobile").className = "btn-press px-3 py-1.5 rounded-lg text-xs font-semibold " + (dev === "mobile" ? "bg-[#F06292] text-white" : "text-[#7D6673]");
+
+      if (dev === "mobile") {
+        frame.classList.remove("w-full");
+        frame.classList.add("max-w-[780px]", "w-full");
+        guides.classList.remove("hidden");
+      } else {
+        frame.classList.remove("max-w-[780px]");
+        frame.classList.add("w-full");
+        guides.classList.add("hidden");
+      }
+    }
+
+    function setScreen(scr) {
+      state.screen = scr;
+      document.querySelectorAll("#screen-tabs button").forEach(btn => {
+        const active = btn.dataset.screen === scr;
+        btn.className = "btn-press px-3 py-1.5 rounded-xl text-xs font-semibold border transition " +
+          (active ? "bg-[#F06292] text-white border-[#F06292]" : "bg-[#FBF6F9] text-[#362B35] border-[#EEDEE4]");
+      });
+
+      document.getElementById("banner-notice").classList.toggle("hidden", scr !== "notice");
+      document.getElementById("banner-active").classList.toggle("hidden", scr !== "active");
+      document.getElementById("darkness-overlay").classList.toggle("hidden", scr !== "active");
+      document.getElementById("modal-result").classList.toggle("hidden", scr !== "result");
+      document.getElementById("modal-shop").classList.toggle("hidden", scr !== "shop");
+
+      if (scr === "active" && !state.carrying) {
+        document.getElementById("carry-toggle").checked = true;
+        toggleCarry();
+      }
+      if (scr === "shop") renderShop();
+    }
+
+    function setZone(zoneId) {
+      state.zone = zoneId;
+      const z = ZONES[zoneId];
+      document.getElementById("hud-zone-name").textContent = z.name;
+      document.getElementById("hud-zone-dot").style.background = z.color;
+    }
+
+    function toggleCarry() {
+      state.carrying = document.getElementById("carry-toggle").checked;
+      document.getElementById("hud-carry-pill").classList.toggle("hidden", !state.carrying);
+      document.getElementById("world-carry-prop").classList.toggle("hidden", !state.carrying);
+    }
+
+    let emoteTimer = null;
+    function triggerEmote(text) {
+      const bubble = document.getElementById("world-emote-bubble");
+      bubble.textContent = text;
+      bubble.classList.remove("hidden");
+      clearTimeout(emoteTimer);
+      emoteTimer = setTimeout(() => bubble.classList.add("hidden"), 1800);
+    }
+
+    function updateCoins() {
+      document.getElementById("hud-coins").textContent = state.coins.toLocaleString();
+      document.getElementById("shop-coins").textContent = state.coins.toLocaleString();
+    }
+
+    function setShopTab(tab) {
+      state.shopTab = tab;
+      renderShop();
+    }
+
+    function renderShop() {
+      const data = SHOP_DATA[state.shopTab];
+      document.getElementById("shop-icon").textContent = data.icon;
+      document.getElementById("shop-title").textContent = data.title;
+      document.getElementById("shop-subtitle").textContent = data.subtitle;
+
+      ["toy_shop", "fashion", "mart"].forEach(k => {
+        const el = document.getElementById("tab-" + k);
+        const on = k === state.shopTab;
+        el.className = "btn-press px-3.5 py-2 text-xs font-extrabold rounded-t-xl border-b-2 transition " +
+          (on ? "bg-[#FFF3F8] text-[#C83B72] border-[#F06292]" : "bg-transparent text-[#7D6673] border-transparent hover:text-[#362B35]");
+      });
+
+      const grid = document.getElementById("shop-grid");
+      grid.innerHTML = "";
+      data.items.forEach(item => {
+        const canAfford = state.coins >= item.price;
+        let btnHtml = "";
+        if (item.equipped) {
+          btnHtml = `<button class="w-full h-11 rounded-xl bg-[#E7F8EC] text-[#22783D] text-xs font-extrabold border border-[#B8E6C6] cursor-default">✓ 장착 중</button>`;
+        } else if (item.owned) {
+          btnHtml = `<button onclick="equipItem('${item.id}')" class="btn-press w-full h-11 rounded-xl bg-[#EEF5FF] hover:bg-[#DDEBFF] text-[#285E9E] text-xs font-extrabold border border-[#C2DAFA]">장착</button>`;
+        } else if (canAfford) {
+          btnHtml = `<button onclick="buyItem('${item.id}', this)" class="btn-press w-full h-11 rounded-xl bg-[#F06292] hover:bg-[#DE4E7F] text-white text-xs font-extrabold shadow-sm">구매 · C ${item.price}</button>`;
+        } else {
+          const short = item.price - state.coins;
+          btnHtml = `<button onclick="failBuy(this, ${short})" class="btn-press w-full h-11 rounded-xl bg-[#F0EBEE] text-[#8E7D86] text-xs font-bold border border-[#E0D6DC]">C ${short} 부족</button>`;
+        }
+
+        const card = document.createElement("div");
+        card.className = "rounded-2xl bg-white border-2 border-[#F2E5EB] p-3 flex flex-col justify-between gap-2.5 shadow-sm";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-1">
+              <div class="w-11 h-11 rounded-2xl bg-[#FFF6FA] flex items-center justify-center text-2xl">${item.icon}</div>
+              ${item.deal ? `<span class="px-2 py-0.5 rounded-full bg-[#FFE6D4] text-[#C44D00] text-[10px] font-black">오늘 특가 30%</span>` : ""}
+              ${item.owned && !item.deal ? `<span class="px-2 py-0.5 rounded-full bg-[#EFEAF0] text-[#665660] text-[10px] font-bold">보유 중</span>` : ""}
+            </div>
+            <div class="mt-2 font-extrabold text-sm text-[#362B35]">${item.name}</div>
+            <div class="text-xs text-[#7D6673] mt-0.5 leading-snug">${item.desc}</div>
+          </div>
+          <div class="space-y-1">
+            ${item.orig ? `<div class="text-[11px] text-[#A2939B] line-through">원래 C ${item.orig}</div>` : ""}
+            ${btnHtml}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function buyItem(id) {
+      const list = SHOP_DATA[state.shopTab].items;
+      const item = list.find(x => x.id === id);
+      if (!item || state.coins < item.price) return;
+      state.coins -= item.price;
+      updateCoins();
+      if (item.consumable) {
+        showToast(`${item.icon} ${item.name} 사용! (60초 효과 시작)`, "#2B8A4E");
+      } else {
+        list.forEach(x => { if (!x.consumable) x.equipped = false; });
+        item.owned = true;
+        item.equipped = true;
+        showToast(`${item.icon} ${item.name} 구매 및 장착 완료!`, "#C83B72");
+      }
+      renderShop();
+    }
+
+    function equipItem(id) {
+      const list = SHOP_DATA[state.shopTab].items;
+      list.forEach(x => { x.equipped = (x.id === id); });
+      const item = list.find(x => x.id === id);
+      showToast(`${item.icon} ${item.name} 장착!`, "#285E9E");
+      renderShop();
+    }
+
+    function failBuy(btn, short) {
+      btn.classList.remove("anim-shake");
+      void btn.offsetWidth;
+      btn.classList.add("anim-shake");
+      showToast(`Mall Coins가 ${short} 부족해요! 알바나 소동으로 모아보세요.`, "#B83B4B");
+    }
+
+    setDevice("pc");
+    setScreen("free");
+    setZone("plaza");
+    updateCoins();
+  </script>
+</body>
+</html>
+

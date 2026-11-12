@@ -18,7 +18,7 @@
 
 - [x] T-103 데이터·코인 기반: `Types` 확정, `DataService`(Mall Coins·보유/장착 아이템·통계 로드·저장) (2026-11-12, Claude Code)
   - [ ] Studio에서 저장이 실제로 되는지 확인: 게임 설정 > 보안에서 "Studio의 API 서비스 접근"을 켜야 한다 (사용자)
-  - [ ] `Config.ShopItems`, 구역 표시 이름(`Config.Zones`)은 상점·HUD 작업(T-105, T-106) 때 만든다
+  - [ ] `Config.ShopItems`는 상점 작업(T-105) 때 만든다 (`Config.Zones`는 T-106에서 추가 완료)
 - [x] T-107 소동 일정과 진행 틀: `EventService`, `ZoneService`, `Config.Events`, `Server.Events/` 모듈 구조, 임시 채팅 알림 (2026-11-12, Claude Code) — 소동 추가 방법은 [structure.md](structure.md)
 - [x] T-113 기획 상세안 확인: 5개 결정 모두 승인 (2026-11-12, 사용자). [game-design.md](game-design.md)에 반영, 세부 수치는 [design-details.md](design-details.md)
 - [x] T-114 맵 수정: 천장 높이 상향(1층 23, 2층 24, 중앙 48 studs), 입구를 닫힌 유리문으로 막아 몰 밖 차단 (2026-11-12, Claude Code)
@@ -34,9 +34,9 @@
   - 창고 간판의 "STAFF ONLY" 제거, 입구를 막던 막대는 보관함으로 이동
 - [x] T-115 들고 나르기 공통 조작: 닿으면 들기, 목적지에 닿으면 놓기, 머리 위 표시, 방치 시 되돌리기 (2026-11-12, Claude Code 초안 작성 · Antigravity 보완·검증) — design-details 4번
 - [x] T-108 소동 1호 **쇼핑몰 대정전** (2026-11-12, Claude Code 초안 작성 · Antigravity 보완·검증 / 선행 T-115) — design-details 5번. HUD 없이도 플레이되게 만든다
-- [ ] T-112 UI 목업 v2: HUD(코인·현재 구역·소동 알림), 소동 진행·결과 화면, 상점 화면 → 사용자 확정 (Claude Code)
-- [ ] T-104 `UI` 기반 넣기 (`Theme`, `Motion`, `AutoScale`, 공용 컴포넌트 → `ReplicatedStorage.UI`) (Claude Code / 선행 T-112)
-- [ ] T-106 기본 허브 HUD & 감정표현(이모트) 및 구역 안내 (`HudController`, `ScreenController`). 임시 채팅 알림을 화면으로 교체 (선행 T-104)
+- [x] T-112 UI 목업 v2: HUD(코인·현재 구역·소동 알림), 소동 진행·결과 화면, 상점 화면 → 사용자 확정 (2026-11-12, Antigravity)
+- [x] T-104 `UI` 기반 넣기 (`Theme`, `Motion`, `AutoScale`, 공용 컴포넌트 → `ReplicatedStorage.UI`) (2026-11-12, Antigravity / 선행 T-112)
+- [x] T-106 기본 허브 HUD & 감정표현(이모트) 및 구역 안내 (`HudController`, `ScreenController`, `EventController`). 임시 채팅 알림을 화면으로 교체 (2026-11-12, Antigravity / 선행 T-104)
 
 ## 3단계: 소동 사이 (알바 · 상점)
 

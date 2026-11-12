@@ -27,13 +27,21 @@ ReplicatedStorage
       Carry           들고 나르기 수치(줍기 반경, 머리 위 높이, 방치 복귀 시간 등)
       Blackout        대정전 수치(인원 구간별 구역·칸 수, 차단기 좌표, 어두운 조명, 유도선)
       Events          소동 일정(첫 공지 90초, 간격 5분, 결과 15초)과 소동별 수치(시간, 목표, 보상)
+      Zones           구역 표시 이름·대표 색(ZoneId → name/color), 복도 기본값, 운반 안내 문구 [구현됨]
+      Emotes          기본 이모트 4종(손 흔들기·환호·춤·웃음) R15 애니메이션 ID·색상·라벨 [구현됨]
     Util              공용 순수 로직
       NumberFormat    1.2K 축약, 쉼표, 분:초
       TableUtil       deepCopy, reconcile
       Validate        클라이언트 입력 검사
       RateLimiter     플레이어별 호출 빈도 제한
-  UI                  테마, 모션, AutoScale, 공용 컴포넌트 (구현 예정)
-    Components
+  UI                  테마, 모션, AutoScale, 공용 컴포넌트 [구현됨]
+    Theme             UI 목업 v2 디자인 토큰(Colors, Font, Radius, Spacing, Layout, Style* 헬퍼)
+    Motion            Spring/Quad 트윈, PopIn, PunchScale, Shake (ReducedMotionEnabled 대응)
+    AutoScale         1280×720 기준 UIScale 자동 보정 (0.78~1.25, fullViewport 보정 포함)
+    Components        공용 UI 컴포넌트
+      Button          터치 최소 44px 보장, 프레스 스케일 애니메이션
+      Modal           Scrim 배면 차단, Card 클릭 투과 방지, X/바깥 탭/Esc·B 닫기
+      Toast           상단 중앙 토스트 배너 (종류별 배지·아이콘·자동 페이드)
   Remotes             RemoteEvent / RemoteFunction 인스턴스
   EventState          (실행 중 생성) 소동 상태가 속성으로 복제되는 Configuration
 
@@ -60,10 +68,10 @@ StarterPlayer.StarterPlayerScripts
   Client
     Main              클라이언트 진입점 (LocalScript). Controllers를 Loader로 실행
     Controllers
-      ScreenController       화면 전환, 모달 스택
-      HudController          상시 HUD(Mall Coins, 현재 구역, 소동 공지, 이모트)
+      ScreenController       공용 ScreenGui(`MallHubUI`), 모달 1개 스택, 상단 토스트, TopInset 계산 [구현됨]
+      HudController          상시 HUD(구역·운반 배지, 코인·증감 팝업, 소동 예고/진행 배너, 결과 모달, 이모트 4종 도크) [구현됨]
       InteractionController  NPC·상점·포토존·오브젝트 상호작용
-      EventController        소동 상태 읽기(GetState, OnChanged, OnResult). 지금은 임시로 채팅창에 알림 [구현됨]
+      EventController        소동 상태 읽기(GetState, OnChanged, OnResult) 및 HUD/모달 연동 (임시 채팅 알림 제거) [구현됨]
     Screens           화면별 UI 모듈
 ```
 
@@ -105,4 +113,5 @@ game.ServerStorage.DebugEventControl:Fire("skip")                 -- 지금 단�
 - 2026-11-12 플레이 테스트: 구역 감지(광장·마트·스테이지·복도), 소동 공지 → 진행 → 성공/실패 → 결과, 코인 지급(100 → 160)을 확인. 콘솔 오류 없음.
 - 2026-11-12 맵 수정 뒤 플레이 테스트: 서쪽 계단으로 2층 도달, 입구 유리문 통과 불가(걷기·점프)를 확인. 맵의 외형은 아직 아무도 눈으로 보지 못했다.
 - 2026-11-12 1차 다듬기 뒤: 화면 캡처로 조명·재질·NPC 외형을 확인. 플레이 테스트에서 NPC의 서 있는 동작, 손님 쪽으로 돌기, 손 흔들기(클라이언트에서 손 높이 변화 측정), 눈 깜빡임을 확인.
-- 미확인: 데이터 저장(Studio의 API 접근이 꺼져 있어 임시 프로필로만 동작), 여러 명일 때의 목표 조정과 MVP, 채팅 알림의 실제 표시.
+- 2026-11-12 UI 기반 및 상시 HUD(T-104, T-106) 플레이 테스트: PC(`1422×753`) 및 Studio Device Simulator `iPhone 14` 가로(`844×390`, 실뷰포트 `749×388`, 배율 `0.78`)에서 TopBar·조이스틱·점프 버튼 회피, 터치 버튼 `>= 44px`, 코인·구역·운반·소동 예고/진행 배너·결과 모달·토스트·R15 이모트 4종 로드를 확인. 콘솔 Lua 오류 없음.
+- 미확인: 데이터 저장(Studio의 API 접근이 꺼져 있어 임시 프로필로만 동작), 여러 명일 때의 목표 조정과 MVP, 실제 모바일/태블릿 기기 터치 체감.

@@ -15,7 +15,7 @@
 
 ## 다음 작업
 
-- T-112 UI 목업 v2 (HUD, 소동 진행·결과, 상점 화면) → T-104 UI 기반 → T-106 HUD
+- T-116 알바 2종 (마트 진열, 쇼핑백 배달) 또는 T-105 상점·NPC 상호작용 (`ShopService`, `ShopScreen`, `InteractionController`)
 - T-120 맵 2차 꾸미기 (상품 진열, 벽 장식, 간판)
 
 ## 참고
