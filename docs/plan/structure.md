@@ -15,6 +15,9 @@ Workspace
                           mart, toy_shop, community, fashion, arcade, storage, power_room, corridor
     NPCs                  NPC 7명. <npcId>(속성 NpcId, ZoneId, NpcRole) 아래 SpawnPad와 Character(R15 캐릭터).
                           Character.HumanoidRootPart에 ProximityPrompt, Character.Head에 이름표(NameTag)
+    Customers             손님 NPC 6명(`customer_1~6`, R15 캐주얼 복장·웃는 얼굴, NameTag 없음, Persistent). 쇼핑백 배달 대상 [구현됨]
+    Jobs                  알바 마커(`Stock/BoxSpawns` 4개, `Stock/ShelfSlots` 12개, `Delivery/BagSpawns` 2개) [구현됨]
+    JobProps              (실행 중 생성, Persistent) 상자·쇼핑백·진열대 윤곽/상품·손님 대기 배지·바닥 원 컨테이너 [구현됨]
 
 ReplicatedStorage
   Shared
@@ -26,8 +29,9 @@ ReplicatedStorage
       Npcs            NPC 연출 수치(동작 id, 인사 거리·간격, 눈 깜빡임)
       Carry           들고 나르기 수치(줍기 반경, 머리 위 높이, 방치 복귀 시간 등)
       Blackout        대정전 수치(인원 구간별 구역·칸 수, 차단기 좌표, 어두운 조명, 유도선)
-      Events          소동 일정(첫 공지 90초, 간격 5분, 결과 15초)과 소동별 수치(시간, 목표, 보상)
+      Events          소동 일정(첫 공지 90초, 간격 5분, 피날레 15초·집결 보너스 10, 결과 15초), 색종이 수치, 소동별 수치
       Zones           구역 표시 이름·대표 색(ZoneId → name/color), 복도 기본값, 운반 안내 문구 [구현됨]
+      Jobs            알바 2종(진열·배달) 보상·리스폰·진열 재보충·배달 거리 단가·최소 운반 시간·5회 연속 보너스·연출 수치 [구현됨]
       Emotes          기본 이모트 4종(손 흔들기·환호·춤·웃음) R15 애니메이션 ID·색상·라벨 [구현됨]
     Util              공용 순수 로직
       NumberFormat    1.2K 축약, 쉼표, 분:초
@@ -52,11 +56,12 @@ ServerScriptService
       DataService     플레이어 데이터(Mall Coins, 보유/장착 아이템, 통계) 로드·저장 [구현됨]
       ZoneService     구역 감지(Player 속성 ZoneId), 구역 안 빈 바닥 지점 고르기 [구현됨]
       ShopService     상점 품목 구매 검증, 장착 처리
-      NpcService      NPC 연출: 서 있는 동작, 눈 깜빡임, 가까이 온 손님 쪽으로 돌아서 인사 [구현됨]
-      CarryService    들고 나르기 공통 조작(닿으면 머리 위 부착, 목적지 전달, 10초 방치 시 복귀) [구현됨]
-      EventService    소동 일정, 60초 전 공지, 인원별 목표 조정, 기여 집계, 보상 지급 [구현됨]
+      NpcService      NPC 연출: `Mall.NPCs` 및 `Mall.Customers` 서 있는 동작, 눈 깜빡임, 인사, 감사 손 흔들기(`PlayWave`), 대정전 중 손님 대기 일시정지(`SetCustomersPaused`)·복구 [구현됨]
+      CarryService    들고 나르기 공통 조작(닿으면 머리 위 부착 + `pickedAt` 기록, 목적지 전달, 10초 방치 시 복귀) [구현됨]
+      JobService      알바 2종(마트 진열·쇼핑백 배달) 진행, 진열대 자동 빈칸 전환, 4초 텔레포트 방지, 5회 연속 +5 보너스, 소동 시작 10초 전 알바 중단·완료 시 재개방 [구현됨]
+      EventService    소동 일정, 60초 전 공지, 인원별 목표 조정, 성공 시 15초 광장 피날레(색종이·집결 보너스), 기여 집계, 보상 지급 [구현됨]
     Events            소동별 모듈. 파일 이름 = 소동 id. Loader가 실행하지 않고 EventService가 불러 쓴다
-      blackout        소동 1호 "쇼핑몰 대정전": 정전·손전등·유도선·배터리·구역별 차단기 복구 [구현됨]
+      blackout        소동 1호 "쇼핑몰 대정전": 정전·손전등·유도선·배터리·구역별 차단기 복구·손님 6명 패닉 표정/말풍선/복도 배회 장애 [구현됨]
       dev_collect     (개발용) 틀 시험용 소동. 자동 일정에 나오지 않는다
 
 ServerStorage
@@ -114,4 +119,6 @@ game.ServerStorage.DebugEventControl:Fire("skip")                 -- 지금 단�
 - 2026-11-12 맵 수정 뒤 플레이 테스트: 서쪽 계단으로 2층 도달, 입구 유리문 통과 불가(걷기·점프)를 확인. 맵의 외형은 아직 아무도 눈으로 보지 못했다.
 - 2026-11-12 1차 다듬기 뒤: 화면 캡처로 조명·재질·NPC 외형을 확인. 플레이 테스트에서 NPC의 서 있는 동작, 손님 쪽으로 돌기, 손 흔들기(클라이언트에서 손 높이 변화 측정), 눈 깜빡임을 확인.
 - 2026-11-12 UI 기반 및 상시 HUD(T-104, T-106) 플레이 테스트: PC(`1422×753`) 및 Studio Device Simulator `iPhone 14` 가로(`844×390`, 실뷰포트 `749×388`, 배율 `0.78`)에서 TopBar·조이스틱·점프 버튼 회피, 터치 버튼 `>= 44px`, 코인·구역·운반·소동 예고/진행 배너·결과 모달·토스트·R15 이모트 4종 로드를 확인. 콘솔 Lua 오류 없음.
+- 2026-11-13 광장 피날레(T-126) 플레이 테스트: `dev_collect`로 성공 시 `finale` 15초 배너(PC·iPhone 14 캡처)·광장 집결 +10 포함(`+70 C` / `"🎉 광장 집결 +10"`)·광장 밖 미지급(`+60 C` / 집결 줄 없음)·실패 시 `finale` 생략·색종이 3기점 분출 및 4초 뒤 정리 확인. 콘솔 오류 없음.
+- 2026-11-13 알바 2종(T-116) 플레이 테스트: 마트 진열(4상자·6빈칸/6진열칸·40~70초 자동 비워짐·3초 상자 리스폰·진열칸 거절), 쇼핑백 배달(장난감/패션 2스폰·손님 2/6 대기·거리 비례 6~10C·인사 507770239 재생·2초 뒤 다음 손님), 4초 미만 텔레포트 방지(물건 소비/코인·횟수 미지급), 5회 연속 +5 보너스 및 10초 방치 시 연속 초기화, `dev_collect` 공지/진행/대기 전환 및 보행 속도 실측 확인. 콘솔 오류 없음.
 - 미확인: 데이터 저장(Studio의 API 접근이 꺼져 있어 임시 프로필로만 동작), 여러 명일 때의 목표 조정과 MVP, 실제 모바일/태블릿 기기 터치 체감.
