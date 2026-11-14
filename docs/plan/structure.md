@@ -33,6 +33,7 @@ ReplicatedStorage
       Zones           구역 표시 이름·대표 색(ZoneId → name/color), 복도 기본값, 운반 안내 문구 [구현됨]
       Jobs            알바 2종(진열·배달) 보상·리스폰·진열 재보충·배달 거리 단가·최소 운반 시간·5회 연속 보너스·연출 수치 [구현됨]
       Emotes          기본 이모트 4종(손 흔들기·환호·춤·웃음) R15 애니메이션 ID·색상·라벨 [구현됨]
+      ShopItems       상점 3종(장난감 가게·패션 상점·마트 간식) 품목 26종 표·탭 목록·NPC 말풍선 안내 문구 [구현됨]
     Util              공용 순수 로직
       NumberFormat    1.2K 축약, 쉼표, 분:초
       TableUtil       deepCopy, reconcile
@@ -46,22 +47,23 @@ ReplicatedStorage
       Button          터치 최소 44px 보장, 프레스 스케일 애니메이션
       Modal           Scrim 배면 차단, Card 클릭 투과 방지, X/바깥 탭/Esc·B 닫기
       Toast           상단 중앙 토스트 배너 (종류별 배지·아이콘·자동 페이드)
-  Remotes             RemoteEvent / RemoteFunction 인스턴스
+  Remotes             RemoteEvent / RemoteFunction 인스턴스 (`ShopRequest` 포함)
   EventState          (실행 중 생성) 소동 상태가 속성으로 복제되는 Configuration
 
 ServerScriptService
   Server
     Main              서버 진입점 (Script). Services를 Loader로 실행
     Services
-      DataService     플레이어 데이터(Mall Coins, 보유/장착 아이템, 통계) 로드·저장 [구현됨]
+      DataService     플레이어 데이터(Mall Coins, 보유/장착 아이템, 통계) 로드·저장, `SpendCoins`/`OwnsItem`/`GrantItem`/`SetEquipped` [구현됨]
       ZoneService     구역 감지(Player 속성 ZoneId), 구역 안 빈 바닥 지점 고르기 [구현됨]
-      ShopService     상점 품목 구매 검증, 장착 처리
+      ShopService     상점 품목 구매(`ZoneService` 구역 검증, `RateLimiter` 속도 제한, 원자적 차감·롤백)·장착/해제·간식 적용 (`ShopRequest` 처리) [구현됨]
+      CosmeticService 풍선·꼬리빛·오라·칭호 캐릭터 부착, 손전등 색 속성, 마트 간식(속도·점프·반짝) 지속 적용 및 리스폰 유지 [구현됨]
       NpcService      NPC 연출: `Mall.NPCs` 및 `Mall.Customers` 서 있는 동작, 눈 깜빡임, 인사, 감사 손 흔들기(`PlayWave`), 대정전 중 손님 대기 일시정지(`SetCustomersPaused`)·복구 [구현됨]
       CarryService    들고 나르기 공통 조작(닿으면 머리 위 부착 + `pickedAt` 기록, 목적지 전달, 10초 방치 시 복귀) [구현됨]
       JobService      알바 2종(마트 진열·쇼핑백 배달) 진행, 진열대 자동 빈칸 전환, 4초 텔레포트 방지, 5회 연속 +5 보너스, 소동 시작 10초 전 알바 중단·완료 시 재개방 [구현됨]
-      EventService    소동 일정, 60초 전 공지, 인원별 목표 조정, 성공 시 15초 광장 피날레(색종이·집결 보너스), 기여 집계, 보상 지급 [구현됨]
+      EventService    소동 일정, 60초 전 공지, 인원별 목표 조정, 성공 시 15초 광장 피날레(색종이·집결 보너스), 기여 집계, 보상 지급, Studio 전용 디버그 채팅(`/소동`·`/대정전`·`/스킵`) [구현됨]
     Events            소동별 모듈. 파일 이름 = 소동 id. Loader가 실행하지 않고 EventService가 불러 쓴다
-      blackout        소동 1호 "쇼핑몰 대정전": 정전·손전등·유도선·배터리·구역별 차단기 복구·손님 6명 패닉 표정/말풍선/복도 배회 장애 [구현됨]
+      blackout        소동 1호 "쇼핑몰 대정전": 정전·손전등(플레이어 `FlashlightColor` 실시간 반영)·유도선·배터리·구역별 차단기 복구·손님 6명 패닉 표정/말풍선/복도 배회 장애 [구현됨]
       dev_collect     (개발용) 틀 시험용 소동. 자동 일정에 나오지 않는다
 
 ServerStorage
@@ -75,9 +77,10 @@ StarterPlayer.StarterPlayerScripts
     Controllers
       ScreenController       공용 ScreenGui(`MallHubUI`), 모달 1개 스택, 상단 토스트, TopInset 계산 [구현됨]
       HudController          상시 HUD(구역·운반 배지, 코인·증감 팝업, 소동 예고/진행 배너, 결과 모달, 이모트 4종 도크) [구현됨]
-      InteractionController  NPC·상점·포토존·오브젝트 상호작용
+      InteractionController  `Mall.NPCs.*` 프롬프트 연결(상점 열기·안내/이벤트 남은 시간 토스트) [구현됨]
       EventController        소동 상태 읽기(GetState, OnChanged, OnResult) 및 HUD/모달 연동 (임시 채팅 알림 제거) [구현됨]
-    Screens           화면별 UI 모듈
+    Screens                  화면별 UI 모듈
+      ShopScreen             상점 3종 모달(탭 전환, 구역·코인 표시, 도형·이모지 아이콘, 구매·장착/해제) [구현됨]
 ```
 
 ## 조명 구성

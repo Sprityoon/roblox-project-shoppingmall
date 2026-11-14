@@ -18,7 +18,7 @@
 
 - [x] T-103 데이터·코인 기반: `Types` 확정, `DataService`(Mall Coins·보유/장착 아이템·통계 로드·저장) (2026-11-12, Claude Code)
   - [ ] Studio에서 저장이 실제로 되는지 확인: 게임 설정 > 보안에서 "Studio의 API 서비스 접근"을 켜야 한다 (사용자)
-  - [ ] `Config.ShopItems`는 상점 작업(T-105) 때 만든다 (`Config.Zones`는 T-106에서 추가 완료)
+  - [x] `Config.ShopItems`는 상점 작업(T-105) 때 만든다 (`Config.Zones`는 T-106에서 추가 완료) (2026-11-13, Antigravity)
 - [x] T-107 소동 일정과 진행 틀: `EventService`, `ZoneService`, `Config.Events`, `Server.Events/` 모듈 구조, 임시 채팅 알림 (2026-11-12, Claude Code) — 소동 추가 방법은 [structure.md](structure.md)
 - [x] T-113 기획 상세안 확인: 5개 결정 모두 승인 (2026-11-12, 사용자). [game-design.md](game-design.md)에 반영, 세부 수치는 [design-details.md](design-details.md)
 - [x] T-114 맵 수정: 천장 높이 상향(1층 23, 2층 24, 중앙 48 studs), 입구를 닫힌 유리문으로 막아 몰 밖 차단 (2026-11-12, Claude Code)
@@ -44,7 +44,7 @@
 
 - [x] T-126 광장 피날레: 소동 성공 뒤 15초 광장 집결 카운트다운, 집결 보너스 +10, 색종이 (2026-11-13, Antigravity) — [지시서](handoff/T-126-plaza-finale.md)
 - [x] T-116 알바 2종: 마트 진열(창고 → 진열대), 쇼핑백 배달(상점 → 손님 NPC). 건당 최소 시간 서버 검사 (2026-11-13, Antigravity / 선행 T-115) — [지시서](handoff/T-116-jobs.md)
-- [ ] T-105 상점과 아이템: 품목 표, 구매·장착(`ShopService`), 꾸미기 표시(`CosmeticService`), 상점 화면(`ShopScreen`), NPC 말 걸기(`InteractionController`) (선행 T-104) — [지시서](handoff/T-105-shop.md)
+- [x] T-105 상점과 아이템: 품목 표, 구매·장착(`ShopService`), 꾸미기 표시(`CosmeticService`), 상점 화면(`ShopScreen`), NPC 말 걸기(`InteractionController`) (2026-11-13, Antigravity / 선행 T-104) — [지시서](handoff/T-105-shop.md)
 - [ ] T-117 첫 접속 흐름: 환영 선물(풍선), 첫 알바 안내선 (선행 T-116, T-105) — [지시서](handoff/T-117-first-visit.md)
 - [ ] T-127 알바 숙련도("직업"): 직업별 5단계, 단계마다 칭호·유니폼 해금과 건당 추가 코인, 상점 화면의 "내 직업" 탭 (선행 T-116, T-105) — [지시서](handoff/T-127-job-ranks.md)
 - [ ] T-128 말 없이 하는 교류: 같이 일하기 보너스, 나눠 먹는 간식, 하이파이브 (선행 T-116, T-105) — [지시서](handoff/T-128-social-actions.md)
